@@ -1,4 +1,5 @@
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.sites.models import Site
 from satchmo_store import get_version
 from satchmo_store.contact.models import Contact
 from satchmo_store.shop.models import Order, Cart
@@ -35,7 +36,7 @@ def add_toolbar_context(sender, context={}, **kwargs):
         show_sales = False
         variation_items = []
         try:
-            product = Product.objects.get(slug=slug)
+            product = Product.objects.get(site=Site.objects.get_current(), slug=slug)
             show_sales = True
             subtypes = product.get_subtypes()
             if 'ConfigurableProduct' in subtypes:
@@ -48,7 +49,7 @@ def add_toolbar_context(sender, context={}, **kwargs):
             
         st = {}
         st['st_satchmo_version'] = get_version()
-        newq = Order.objects.filter(status__exact = 'New')
+        newq = Order.objects.filter(site=Site.objects.get_current(), status__exact = 'New')
         st['st_new_order_ct'] = newq.count()
         amounts = newq.values_list('total', flat=True)
         if amounts:
@@ -62,15 +63,15 @@ def add_toolbar_context(sender, context={}, **kwargs):
         week = datetime.datetime.today()-datetime.timedelta(days=7)
         day = datetime.datetime.today()-datetime.timedelta(days=1)
         hours = datetime.datetime.today()-datetime.timedelta(hours=1)
-        cartweekq = Cart.objects.filter(date_time_created__gte=week)
-        cartdayq = Cart.objects.filter(date_time_created__gte=day)
-        carthourq = Cart.objects.filter(date_time_created__gte=hours)
+        cartweekq = Cart.objects.filter(site=Site.objects.get_current(), date_time_created__gte=week)
+        cartdayq = Cart.objects.filter(site=Site.objects.get_current(), date_time_created__gte=day)
+        carthourq = Cart.objects.filter(site=Site.objects.get_current(), date_time_created__gte=hours)
         st['st_cart_7d_ct'] = cartweekq.count()
         st['st_cart_1d_ct'] = cartdayq.count()
         st['st_cart_1h_ct'] = carthourq.count()
         
-        st['st_contacts_ct'] = Contact.objects.all().count()
-        st['st_contacts_7d_ct'] = Contact.objects.filter(create_date__gte=week).count()
+        st['st_contacts_ct'] = Contact.objects.filter(site=Site.objects.get_current()).count()
+        st['st_contacts_7d_ct'] = Contact.objects.filter(site=Site.objects.get_current(), create_date__gte=week).count()
         # edits = []
         # st['st_edits'] = edits        
         
