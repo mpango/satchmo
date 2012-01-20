@@ -165,7 +165,7 @@ class Category(models.Model):
             slugs = qry.filter(site=self.site, active=True, **kwargs).values_list('slug',flat=True)
             return Product.objects.filter(Q(productvariation__parent__product__slug__in = slugs)|Q(slug__in = slugs))
         else:
-            return qry.filter(site=self.site, active=True, productvariation__parent__isnull=True, **kwargs)
+            return qry.filter(Q(site = self.site) | Q(multishopproduct__virtual_sites = self.site), active=True, productvariation__parent__isnull=True, **kwargs)
 
     def translated_attributes(self, language_code=None):
         if not language_code:
@@ -802,7 +802,7 @@ class ProductManager(models.Manager):
         #log.debug("by_site: site=%s", site)
         if not variations:
             kwargs['productvariation__parent__isnull'] = True
-        return self.filter(site__id__exact=site, **kwargs)
+        return self.filter(Q(site__id__exact = site) | Q(multishopproduct__virtual_sites__id__exact = site), **kwargs)
 
     def featured_by_site(self, site=None, **kwargs):
         return self.by_site(site=site, active=True, featured=True, **kwargs)
@@ -810,7 +810,9 @@ class ProductManager(models.Manager):
     def get_by_site(self, site=None, **kwargs):
         if not site:
             site = Site.objects.get_current()
-        return self.get(site = site, **kwargs)
+        # import pdb; pdb.set_trace()
+        # return self.active().get(Q(site = site) | Q(multishopproduct__virtual_sites = site), **kwargs)
+        return self.get(Q(site = site) | Q(multishopproduct__virtual_sites = site), **kwargs)
 
 
     def recent_by_site(self, **kwargs):
